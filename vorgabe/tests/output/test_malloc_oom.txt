@@ -1,0 +1,38 @@
+--- Beginning of memory layout ---
++--------------------------------+
+| Block at:       0x55d928941090 |
+|  -  -  -  -  -  -  -  -  -  -  |
+| Next at:        0x55d92a44e2a0 |
+| Availability:             used |
+| Size:                      100 |
+| Data (first 8 Bytes):          |
+|   ASCII : _._._._._._._._      |
+|   HEX   : 0x00 0x00 0x00 0x00  |
+|           0x00 0x00 0x00 0x00  |
++--------------------------------+
+| Block at:       0x55d92a44e2a0 |
+|  -  -  -  -  -  -  -  -  -  -  |
+| Next at:        0x55d92a44e2c0 |
+| Availability:             used |
+| Size:                      100 |
+| Data (first 8 Bytes):          |
+|   ASCII : !._._._._._._._      |
+|   HEX   : 0x21 0x00 0x00 0x00  |
+|           0x00 0x00 0x00 0x00  |
++--------------------------------+
+| Block at:       0x55d92a44e2c0 |
+|  -  -  -  -  -  -  -  -  -  -  |
+| Next at:                 (nil) |
+| Availability:             free |
+| Size:                      150 |
++--------------------------------+
+------ End of memory layout ------
+----
+First allocation:
+Expected: not NULL
+Got     : 0x55d928941090
+----
+Last allocation:
+Expected: (nil)
+Got     : 0x55d92a44e2a0
+Last allocation did not match expected outcome

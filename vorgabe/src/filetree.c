@@ -3,14 +3,34 @@
 /* new file tree */
 Tree* filetree_new()
 {
-	/* TODO: create initialize new file tree */
+	Tree* tree = ALLOCATE(sizeof(Tree));
+	tree->root = ALLOCATE(sizeof(Directory));
+	Node* t = (Node*) tree->root;
+	t->flags = FILE_TREE_FLAG_DIRECTORY;
+	t->parent = NULL;
+	t->name = malloc(sizeof(char)*2);
+	strncpy(t->name,"",2);
+	t->next = NULL;
+	t->prev = NULL;
 	return NULL; /* <-- remove this */
 }
 
 /* destroy file tree */
 void filetree_destroy(Tree * tree)
 {
-	/* TODO: free all memory */
+	Directory* dir = (Directory*) tree;
+	if(strncmp(dir->node.name,"",strlen(dir->node.name))) return;
+	Node* childs = dir->first_child;
+	while(childs->next!=NULL){
+		if(childs->flags == FILE_TREE_FLAG_DIRECTORY){
+			filetree_destroy((Tree *)childs);
+		}
+		else{
+			childs = childs->next;
+			FREE(childs->prev);
+		}
+		childs = childs->next;
+	}
 }
 
 /* mkdir */
@@ -79,8 +99,19 @@ char* filetree_get_path(Node * n)
 /* is string valid file/directory name? */
 FileError filetree_name_valid(const char * name)
 {
-	/* TODO: check whether given name is a valid file/directory name */
-	return FILE_TREE_ERROR_NOT_IMPLEMENTED;
+	if(strncmp(name,".",strlen(name))==0 || strncmp(name,"..",strlen(name)) == 0 || strncmp(name,"",strlen(name)) == 0){
+		return FILE_TREE_ERROR_ILLEGAL_NAME;
+	}
+	for(int i = 0;i<strlen(name);i++){
+		if(isalpha(name[i]) || (name[i]>='0' && name[i]<='9') || name[i] == '.' || name[i] == '-' || name[i] == '_')
+		{
+			continue;
+		}
+		else{
+			return FILE_TREE_ERROR_ILLEGAL_NAME;
+		}
+	}
+	return FILE_TREE_SUCCESS;
 }
 
 /* get error string */
