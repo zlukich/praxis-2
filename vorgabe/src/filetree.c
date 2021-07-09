@@ -273,8 +273,18 @@ FileError filetree_mv(Node * source, Directory * destination)
 /* print file */
 void filetree_print_file(File * file)
 {
-	/* TODO: print contents of file to stdout */
-	puts(filetree_error_string(FILE_TREE_ERROR_NOT_IMPLEMENTED));
+	fptr = fopen(filename,"r");
+	if(fptr==NULL){
+		printf("Cannot open file\n");
+		return;
+	}
+	c = fgetc(fptr)
+	while(c!=EOF){
+		printf("%c",c);
+		c = fgetc(fptr);
+	}
+	printf("\n");
+	fclose(fptr);
 }
 
 /* resolve path */
