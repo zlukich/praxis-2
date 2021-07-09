@@ -200,15 +200,74 @@ void filetree_find(const Directory * start, const char * name)
 /* remove file/directory */
 FileError filetree_rm(Node * node)
 {
-	/* TODO: remove a file or directory and all of its children */
-	return FILE_TREE_ERROR_NOT_IMPLEMENTED;
+	if(node->parent == NULL) return FILE_TREE_ERROR_RM_ROOT;
+	Directory* parent = (Directory*) node->parent;
+	Node * childs = parent->first_child;
+	while(childs!=NULL){
+		if(childs == node){
+			if(childs->prev == NULL && childs->next == NULL)
+			{
+				parent->first_child == NULL; break;
+			}
+			if(childs->prev == NULL && childs->next != NULL)
+			{
+				parent->first_child == childs->next; break;
+			}
+			if(childs->prev != NULL && childs->next != NULL)
+			{
+				child->prev->next = childs->next; 
+			}
+		}
+	}
+	if(node->flags == FILE_TREE_FLAG_DIRECTORY){
+		childs = ((Directory*)node)->first_child;
+		FREE(node);
+		while(childs!=NULL){
+			filetree_rm(childs);
+			childs= childs->next;
+		}
+	}
+	else
+	{
+		FREE(node->name);
+		FREE(node);
+	}
+	
+	return FILE_TREE_SUCCESS;
 }
 
 /* move file/directory */
 FileError filetree_mv(Node * source, Directory * destination)
 {
-	/* TODO: move a file or directory to a new location */
-	return FILE_TREE_ERROR_NOT_IMPLEMENTED;
+	if(destination->parent == source || destination == source) return FILE_TREE_ERROR_SUBDIR_OF_ITSELF;
+	Node* childs = destination->first_child;
+	while(childs !=NULL){
+		if(strcmp(childs->name,source->name) == 0)
+			return FILE_TREE_ERROR_DUPLICATE_NAME
+		childs = childs->next;
+	} 
+	Directory* parent = (Directory*) source->parent;
+	childs = parent->first_child;
+	while(childs!=NULL){
+		if(childs == source){
+			if(childs->prev == NULL && childs->next == NULL)
+			{
+				parent->first_child == NULL; break;
+			}
+			if(childs->prev == NULL && childs->next != NULL)
+			{
+				parent->first_child == childs->next; break;
+			}
+			if(childs->prev != NULL && childs->next != NULL)
+			{
+				child->prev->next = childs->next; 
+			}
+		}
+	}
+	source->prev = NULL;
+	source->next = destination->first_child;
+	destination->first_child = source;
+	return FILE_TREE_SUCCESS;
 }
 
 /* print file */
