@@ -8,58 +8,194 @@ Tree* filetree_new()
 	Node* t = (Node*) tree->root;
 	t->flags = FILE_TREE_FLAG_DIRECTORY;
 	t->parent = NULL;
-	t->name = malloc(sizeof(char)*2);
+	t->name = ALLOCATE(sizeof(char)*2);
 	strncpy(t->name,"",2);
 	t->next = NULL;
 	t->prev = NULL;
-	return NULL; /* <-- remove this */
+	return tree;
 }
-
-/* destroy file tree */
-void filetree_destroy(Tree * tree)
-{
-	Directory* dir = (Directory*) tree;
-	if(strncmp(dir->node.name,"",strlen(dir->node.name))) return;
+void filetree_destroy_dir(Directory * dir){
+	
+	if(dir->first_child==NULL) return;
 	Node* childs = dir->first_child;
-	while(childs->next!=NULL){
+	while(childs!=NULL){
 		if(childs->flags == FILE_TREE_FLAG_DIRECTORY){
-			filetree_destroy((Tree *)childs);
+			filetree_destroy_dir((Directory*)childs );
 		}
 		else{
-			childs = childs->next;
-			FREE(childs->prev);
+			if(childs->next == NULL)
+			{
+				FREE(childs);
+			}
+			else
+			{
+				childs = childs->next;
+				FREE(childs->prev);
+			}
 		}
 		childs = childs->next;
 	}
+}
+/* destroy file tree */
+void filetree_destroy(Tree * tree)
+{
+	Directory* dir = tree->root;
+	filetree_destroy_dir(dir);
 }
 
 /* mkdir */
 FileError filetree_mkdir(Directory * parent, const char * name)
 {
-	/* TODO: create new directory */
-	return FILE_TREE_ERROR_NOT_IMPLEMENTED;
+
+	Node* childs = (Node *)parent;
+
+	if(filetree_name_valid(name) == FILE_TREE_ERROR_ILLEGAL_NAME)
+		return FILE_TREE_ERROR_ILLEGAL_NAME;
+
+	while(childs!=NULL){
+		if(strncmp(childs->name,name,strlen(name))== 0)
+			return FILE_TREE_ERROR_DUPLICATE_NAME;
+		childs = childs->next;
+	}
+	Directory* new_d = ALLOCATE(sizeof(Directory));
+	new_d->first_child =NULL;
+	Node * node = (Node *) new_d;
+	node->flags = FILE_TREE_FLAG_DIRECTORY;
+	node->parent = parent;
+	node->name = ALLOCATE(sizeof(char)*(strlen(name)+1));
+	strncpy(node->name,name,strlen(name));
+	node->next = parent->first_child;
+	node->prev = NULL;
+	parent->first_child = (Node *)new_d;
+	return FILE_TREE_SUCCESS;
 }
 
 /* mkfile */
 FileError filetree_mkfile(Directory * parent, const char * name, const void * data, size_t data_len)
 {
-	/* TODO: create new file */
-	return FILE_TREE_ERROR_NOT_IMPLEMENTED;
+	Node* childs = (Node *)parent;
+
+	if(filetree_name_valid(name) == FILE_TREE_ERROR_ILLEGAL_NAME)
+		return FILE_TREE_ERROR_ILLEGAL_NAME;
+
+	while(childs!=NULL){
+		if(strncmp(childs->name,name,strlen(name))== 0)
+			return FILE_TREE_ERROR_DUPLICATE_NAME;
+		childs = childs->next;
+	}
+
+	File * file = ALLOCATE(sizeof(File));
+	Node * file_node = (Node *) file;
+	file->data = ALLOCATE(sizeof(data));
+	file->data = data;
+	file->data_len = data_len;
+	file_node->flags = FILE_TREE_FLAG_EXECUTABLE;
+	file_node->parent = parent;
+	file_node->next = parent->first_child;
+	file_node->prev = NULL;
+	parent->first_child = file_node;
+	file_node->name = ALLOCATE(sizeof(char)*(strlen(name)+1));
+	strncpy(file_node->name,name,strlen(name));
+
+	return FILE_TREE_SUCCESS;
 }
 
 /* list contents of directory */
 void filetree_ls(const Directory * dir)
 {
-	/* TODO: show contents of given directory */
-	puts(filetree_error_string(FILE_TREE_ERROR_NOT_IMPLEMENTED));
+	Node * childs = dir->first_child;
+	int max = 0;
+	while(childs!=NULL){
+		if(strlen(childs->name)>=max)
+			max = strlen(childs->name);
+		
+		childs = childs->next;
+	}
+	childs = dir->first_child;
+	while(childs!=NULL){
+		if(childs->flags == FILE_TREE_FLAG_DIRECTORY){
+			printf("%*s DIRECTORY\n",-max-4,childs->name);
+		}
+		else{
+			printf("%*s FILE\n",-max-4,childs->name);
+		}
+		childs = childs->next;
+	}
+	//puts(filetree_error_string(FILE_TREE_ERROR_NOT_IMPLEMENTED));
 }
 
+
+void filetree_find_pfad(const Directory * start, const char * name, char* pfad)
+{
+	/* TODO: show files/directories recursively */
+	
+	if(start->first_child==NULL) { FREE(pfad);return ;}
+	char* old_pfad = ALLOCATE(sizeof(char)*(strlen(pfad)+1));
+	strcpy(old_pfad,pfad);
+	
+	Node * childs = start->first_child;
+	while(childs!=NULL){
+		if(childs->flags == FILE_TREE_FLAG_DIRECTORY){
+			if(name == NULL)
+				printf("%s%s\n",old_pfad,childs->name);
+			else if (strcmp(name,"") == 0)
+				printf("%s%s\n",old_pfad,childs->name);
+			else if(strcmp(childs->name,name) == 0)
+				printf("%s%s\n",old_pfad,childs->name);
+			char* new_pfad = ALLOCATE(sizeof(char)*(strlen(old_pfad)+2+strlen(childs->name)));
+			strcpy(new_pfad,old_pfad);
+			strcat(new_pfad,childs->name);
+			strcat(new_pfad,"/");
+			
+			FREE(pfad);
+			filetree_find_pfad((Directory *) childs, name,new_pfad);
+		}
+		else{
+			if(name == NULL)
+				printf("%s%s\n",old_pfad,childs->name);
+			else if (strcmp(name,"") == 0)
+				printf("%s%s\n",old_pfad,childs->name);
+			else if(strcmp(childs->name,name) == 0)
+				printf("%s%s\n",old_pfad,childs->name);
+		}
+		childs = childs->next;
+	}
+	
+}
 /* find */
 void filetree_find(const Directory * start, const char * name)
 {
 	/* TODO: show files/directories recursively */
-	puts(filetree_error_string(FILE_TREE_ERROR_NOT_IMPLEMENTED));
+	int n = 0;
+	if(start->node.parent == NULL)
+		n = 0;
+	else
+		n = strlen(start->node.name);
+	 char* str = ALLOCATE(sizeof(char)*(2+n));
+	 strcpy(str,"/");
+
+	if(start->node.parent != NULL)
+		{strcat(str,start->node.name);
+		//strcat(str,"/");
+		}
+	if(name == NULL)
+				printf("%s\n",str);
+	else if (strcmp(name,"") == 0)
+				printf("%s\n",str);
+	else if(strcmp(start->node.name,name) == 0)
+				printf("%s\n",str);
+	
+	if(start->node.parent != NULL)
+		{
+			str = ALLOCATE(sizeof(char)*(2+n+1));
+			strcpy(str,"/");
+			strcat(str,start->node.name);
+			strcat(str,"/");
+		}
+	filetree_find_pfad(start,name,str);
+	
 }
+
 
 /* remove file/directory */
 FileError filetree_rm(Node * node)
@@ -103,7 +239,7 @@ FileError filetree_name_valid(const char * name)
 		return FILE_TREE_ERROR_ILLEGAL_NAME;
 	}
 	for(int i = 0;i<strlen(name);i++){
-		if(isalpha(name[i]) || (name[i]>='0' && name[i]<='9') || name[i] == '.' || name[i] == '-' || name[i] == '_')
+		if((name[i]>='a' && name[i]<='z') || (name[i]=='A' && name[i]<='Z') || (name[i]>='0' && name[i]<='9') || name[i] == '.' || name[i] == '-' || name[i] == '_')
 		{
 			continue;
 		}
